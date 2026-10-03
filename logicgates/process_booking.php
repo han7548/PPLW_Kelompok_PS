@@ -1,9 +1,7 @@
 <?php
 header('Content-Type: application/json');
 
-require_once '../dbconnection/dbexceptions.php';
-require_once '../dbconnection/respon.php';
-require_once '../dbconnection/dbconnection.php';
+require_once __DIR__ . '/../callinglibs.php';
 
 $nama_depan    = $_POST['nama_depan'] ?? '';
 $nama_belakang = $_POST['nama_belakang'] ?? '';
