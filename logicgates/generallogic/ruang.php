@@ -78,3 +78,5 @@ class Ruang
         return $respon->data;
     }
 }
+
+// CRUD YA GAIS KARENA BIAR ADMIN JUGA BISA MODIF BY CONTROL PANEL
