@@ -1,8 +1,7 @@
 # PPLW_Kelompok_PS
 untuk uts dan uas
 
-# testing git commit
-gwe males pindah ke akun uner
+# FYI untuk ini aku pake try-tunneling by cloudeflare, kalau mau visit web by link chat aja ke Hana ( semoga lagi pegang laptop)
 
 # TUTORIAL BIAR UP TO DATE DENGAN MAIN BRANCH ADA DI FILE HACK MD SCROLL KE BAWAH
 https://hackmd.io/@NotesCuzMyBrainIsFriedISALRTAKENHOWWW/SkbIa7Mczg/edit
