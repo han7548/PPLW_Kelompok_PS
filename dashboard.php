@@ -3,11 +3,11 @@ require_once __DIR__ . '/callinglibs.php';
 
 $db = new DBconnection();
 
-// Ambil data ruangan
+
 $ruangClass = new Ruang($db);
 $listRuang = $ruangClass->getAll()->data ?? [];
 
-// Ambil data unit
+
 $unitClass = new Unit($db);
 $listUnit = $unitClass->getAll()->data ?? [];
 

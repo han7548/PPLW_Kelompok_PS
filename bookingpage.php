@@ -9,9 +9,8 @@ $ruangDipilih = null;
 $ruangTersedia = [];
 $error = '';
 
-/* ==================================================
- * 1. USER MEMILIH RUANGAN
- * ================================================== */
+
+// USER MILIH RUANGAN
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'pilih_ruangan') {
     $ruangDipilih = [
         'id' => (int) ($_POST['ruang_id'] ?? 0),
@@ -21,9 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'pilih
     ];
 }
 
-/* ==================================================
- * 2. USER MEMBUAT REQUEST BOOKING
- * ================================================== */
+
+//USER BUAT REQUEST BOOKIENG
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'buat_booking') {
     $nama_depan = trim($_POST['nama_depan'] ?? '');
     $nama_belakang = trim($_POST['nama_belakang'] ?? '');
@@ -64,9 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'buat_
     }
 }
 
-/* ==================================================
- * 3. MENCARI RUANGAN TERSEDIA
- * ================================================== */
+
+// CARI RUANGAN TERSEDIA
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['tanggal']) && isset($_GET['jam_mulai']) && isset($_GET['durasi'])) {
     $tanggal = trim($_GET['tanggal']);
     $jam_mulai = trim($_GET['jam_mulai']);

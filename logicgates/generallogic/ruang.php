@@ -11,8 +11,7 @@ class Ruang {
         return $this->db->send_query($query);
     }
 
-    // Required by your bookingpage.php
-    public function cariRuangTersedia(string $tanggal, string $jam_mulai, int $durasi): array {
+        public function cariRuangTersedia(string $tanggal, string $jam_mulai, int $durasi): array {
         $query = "
             SELECT r.id, r.nama, r.deskripsi, r.tarif_per_jam, r.foto, kr.nama as nama_kategori
             FROM ruang r

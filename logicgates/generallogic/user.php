@@ -12,7 +12,7 @@ class User {
 
         if ($respon->status && !empty($respon->data)) {
             $user = $respon->data[0];
-            // Verify bcrypt hash from your init/new.sql
+            
             if (password_verify($password, $user['password'])) {
                 if (session_status() === PHP_SESSION_NONE) session_start();
                 $_SESSION['admin_id'] = $user['id'];

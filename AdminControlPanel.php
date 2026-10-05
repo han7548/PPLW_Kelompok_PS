@@ -135,11 +135,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     exit();
 }
 
-/*
- * ==================================================
- * FETCH DATA & MAPPING KATEGORI
- * ==================================================
- */
+
+// FETCH DATA & MAPPING KATEGORI
 $queryPending = "SELECT rb.*, r.nama as nama_ruang, r.tarif_per_jam, kr.nama as nama_kategori FROM request_booking rb LEFT JOIN ruang r ON rb.ruang_id = r.id LEFT JOIN kategori_ruang kr ON r.kategori_ruang = kr.id WHERE rb.approval_status = 'pending' ORDER BY rb.created_at ASC";
 $pendingBookings = $db->send_query($queryPending)->data ?? [];
 
@@ -384,7 +381,7 @@ $db->close_connection();
             </div>
         </div>
 
-        <!-- SECTION 1.5: APPROVED BOOKINGS LIST -->
+       
         <!-- SECTION 1.5: APPROVED BOOKINGS LIST -->
         <div class="card" style="flex-basis: 100%;">
             <h3 style="color: #28a745;">List Approved Bookings (Menunggu Kedatangan)</h3>
