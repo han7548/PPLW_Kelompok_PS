@@ -43,6 +43,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $bookingClass = new Booking($db);
         $respon = $bookingClass->updateStatus($booking_id, $status, $admin_id);
         $pesan_temp = $respon->status ? "Booking #$booking_id di-$status!" : "Gagal update booking.";
+    } elseif ($action === 'mark_arrived') {
+        $booking_id = (int) $_POST['booking_id'];
+        $bookingClass = new Booking($db);
+        $respon = $bookingClass->updateStatus($booking_id, 'terkonfirmasi datang', $admin_id);
+        $pesan_temp = $respon->status ? "Booking #$booking_id masuk ke Log Book!" : "Gagal update status.";
     }
 
     // --- KATEGORI RUANG ---
@@ -55,8 +60,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $respon = $db->send_query($query, [$_POST['nama'], $_POST['deskripsi'], $admin_id, $edit_id]);
         $pesan_temp = $respon->status ? "Kategori Ruang diupdate!" : "Gagal update.";
     } elseif ($action === 'delete_kategori_ruang') {
-        $respon = $db->send_query("DELETE FROM kategori_ruang WHERE id=$1", [(int)$_POST['delete_id']]);
-        $pesan_temp = $respon->status ? "Kategori Ruang dihapus!" : "Gagal hapus.";
+        $cat_id = (int)$_POST['delete_id'];
+        // GATEKEEPER: Cek apakah masih ada ruangan aktif yang pakai kategori ini
+        $cek = $db->send_query("SELECT COUNT(*) as total FROM ruang WHERE kategori_ruang = $1 AND is_active = true", [$cat_id]);
+        if ($cek->data[0]['total'] > 0) {
+            $pesan_temp = "Gagal: Hapus atau nonaktifkan semua ruangan di kategori ini terlebih dahulu!";
+        } else {
+            $respon = $db->send_query("UPDATE kategori_ruang SET is_active = false WHERE id=$1", [$cat_id]);
+            $pesan_temp = $respon->status ? "Kategori Ruang disembunyikan!" : "Gagal hapus.";
+        }
     }
 
     // --- RUANGAN ---
@@ -74,8 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
         $pesan_temp = $respon->status ? "Ruangan diupdate!" : "Gagal update ruangan.";
     } elseif ($action === 'delete_ruang') {
-        $respon = $db->send_query("DELETE FROM ruang WHERE id=$1", [(int)$_POST['delete_id']]);
-        $pesan_temp = $respon->status ? "Ruangan dihapus!" : "Gagal hapus ruangan.";
+        $respon = $db->send_query("UPDATE ruang SET is_active = false WHERE id=$1", [(int)$_POST['delete_id']]);
+        $pesan_temp = $respon->status ? "Ruangan disembunyikan (History aman)!" : "Gagal menonaktifkan ruangan.";
     }
 
     // --- KATEGORI UNIT ---
@@ -88,8 +100,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $respon = $db->send_query($query, [$_POST['nama'], $_POST['deskripsi'], $admin_id, $edit_id]);
         $pesan_temp = $respon->status ? "Kategori Unit diupdate!" : "Gagal.";
     } elseif ($action === 'delete_kategori_unit') {
-        $respon = $db->send_query("DELETE FROM kategori_unit WHERE id=$1", [(int)$_POST['delete_id']]);
-        $pesan_temp = $respon->status ? "Kategori Unit dihapus!" : "Gagal.";
+        $cat_id = (int)$_POST['delete_id'];
+        // GATEKEEPER: Cek apakah masih ada unit aktif yang pakai kategori ini
+        $cek = $db->send_query("SELECT COUNT(*) as total FROM unit WHERE kategori_unit = $1 AND is_active = true", [$cat_id]);
+        if ($cek->data[0]['total'] > 0) {
+            $pesan_temp = "Gagal: Hapus atau nonaktifkan semua unit di kategori ini terlebih dahulu!";
+        } else {
+            $respon = $db->send_query("UPDATE kategori_unit SET is_active = false WHERE id=$1", [$cat_id]);
+            $pesan_temp = $respon->status ? "Kategori Unit disembunyikan!" : "Gagal hapus.";
+        }
     }
 
     // --- UNIT ---
@@ -107,8 +126,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
         $pesan_temp = $respon->status ? "Unit diupdate!" : "Gagal.";
     } elseif ($action === 'delete_unit') {
-        $respon = $db->send_query("DELETE FROM unit WHERE id=$1", [(int)$_POST['delete_id']]);
-        $pesan_temp = $respon->status ? "Unit dihapus!" : "Gagal.";
+        $respon = $db->send_query("UPDATE unit SET is_active = false WHERE id=$1", [(int)$_POST['delete_id']]);
+        $pesan_temp = $respon->status ? "Unit disembunyikan!" : "Gagal menonaktifkan unit.";
     }
 
     $_SESSION['pesan_aksi'] = $pesan_temp;
@@ -121,34 +140,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
  * FETCH DATA & MAPPING KATEGORI
  * ==================================================
  */
-$queryPending = "
-    SELECT rb.*, r.nama as nama_ruang, r.tarif_per_jam, kr.nama as nama_kategori 
-    FROM request_booking rb 
-    LEFT JOIN ruang r ON rb.ruang_id = r.id 
-    LEFT JOIN kategori_ruang kr ON r.kategori_ruang = kr.id 
-    WHERE rb.approval_status = 'pending' 
-    ORDER BY rb.created_at ASC
-";
+$queryPending = "SELECT rb.*, r.nama as nama_ruang, r.tarif_per_jam, kr.nama as nama_kategori FROM request_booking rb LEFT JOIN ruang r ON rb.ruang_id = r.id LEFT JOIN kategori_ruang kr ON r.kategori_ruang = kr.id WHERE rb.approval_status = 'pending' ORDER BY rb.created_at ASC";
 $pendingBookings = $db->send_query($queryPending)->data ?? [];
 
-$queryApproved = "
-    SELECT rb.*, r.nama as nama_ruang, r.tarif_per_jam, kr.nama as nama_kategori 
-    FROM request_booking rb 
-    LEFT JOIN ruang r ON rb.ruang_id = r.id 
-    LEFT JOIN kategori_ruang kr ON r.kategori_ruang = kr.id 
-    WHERE rb.approval_status = 'approved' 
-    ORDER BY rb.created_at DESC
-";
+$queryApproved = "SELECT rb.*, r.nama as nama_ruang, r.tarif_per_jam, kr.nama as nama_kategori FROM request_booking rb LEFT JOIN ruang r ON rb.ruang_id = r.id LEFT JOIN kategori_ruang kr ON r.kategori_ruang = kr.id WHERE rb.approval_status = 'approved' ORDER BY rb.created_at ASC";
 $approvedBookings = $db->send_query($queryApproved)->data ?? [];
 
-$kategoriClass = new KategoriRuang($db);
-$listKategori = $kategoriClass->getAll()->data ?? [];
-$ruangClass = new Ruang($db);
-$listRuang = $ruangClass->getAll()->data ?? [];
-$kategoriUnitClass = new KategoriUnit($db);
-$listKategoriUnit = $kategoriUnitClass->getAll()->data ?? [];
-$unitClass = new Unit($db);
-$listUnit = $unitClass->getAll()->data ?? [];
+$queryLogbook = "SELECT rb.*, r.nama as nama_ruang, kr.nama as nama_kategori FROM request_booking rb LEFT JOIN ruang r ON rb.ruang_id = r.id LEFT JOIN kategori_ruang kr ON r.kategori_ruang = kr.id WHERE rb.approval_status = 'terkonfirmasi datang' ORDER BY rb.updated_at DESC";
+$logBookings = $db->send_query($queryLogbook)->data ?? [];
+
+// HANYA AMBIL YANG MASIH AKTIF (TERMASUK KATEGORI!)
+$listKategori = $db->send_query("SELECT * FROM kategori_ruang WHERE is_active = true ORDER BY id DESC")->data ?? [];
+$listKategoriUnit = $db->send_query("SELECT * FROM kategori_unit WHERE is_active = true ORDER BY id DESC")->data ?? [];
+
+$listRuang = $db->send_query("SELECT r.*, kr.nama as nama_kategori FROM ruang r LEFT JOIN kategori_ruang kr ON r.kategori_ruang = kr.id WHERE r.is_active = true")->data ?? [];
+$listUnit = $db->send_query("SELECT u.*, ku.nama as nama_kategori FROM unit u LEFT JOIN kategori_unit ku ON u.kategori_unit = ku.id WHERE u.is_active = true")->data ?? [];
 
 // Mapping ID Kategori ke Nama Kategori agar tampil di tabel Ruang & Unit
 $mapKategoriRuang = [];
@@ -379,38 +385,57 @@ $db->close_connection();
         </div>
 
         <!-- SECTION 1.5: APPROVED BOOKINGS LIST -->
-        <div class="card">
-            <h3 style="color: #38a169;">List Approved Bookings (Disetujui)</h3>
+        <!-- SECTION 1.5: APPROVED BOOKINGS LIST -->
+        <div class="card" style="flex-basis: 100%;">
+            <h3 style="color: #28a745;">List Approved Bookings (Menunggu Kedatangan)</h3>
             <div class="table-responsive">
                 <table>
-                    <thead>
-                        <tr><th>ID</th><th>PEMESAN & WA</th><th>RUANGAN</th><th>TANGGAL & JAM MAIN</th><th>BUKTI BAYAR</th></tr>
-                    </thead>
-                    <tbody>
-                        <?php if (count($approvedBookings) > 0): ?>
-                            <?php foreach ($approvedBookings as $ab): ?>
-                            <tr>
-                                <td>#<?= $ab['id'] ?></td>
-                                <td><?= htmlspecialchars($ab['nama_depan'] . ' ' . $ab['nama_belakang']) ?><br><small style="color:#718096;"><?= htmlspecialchars($ab['no_wa']) ?></small></td>
-                                <td><strong><?= htmlspecialchars($ab['nama_ruang']) ?></strong></td>
-                                <td><?= htmlspecialchars($ab['pesan_untuk_tanggal']) ?> | <?= htmlspecialchars($ab['jam_mulai']) ?> (<?= $ab['durasi'] ?>)</td>
-                                <td>
-                                    <?php if (!empty($ab['bukti_pembayaran'])): ?>
-                                        <a href="uploads/<?= htmlspecialchars($ab['bukti_pembayaran']) ?>" target="_blank" style="color: #3182ce;">Lihat Bukti</a>
-                                    <?php else: ?>
-                                        -
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr><td colspan="5" style="text-align: center; color: #a0aec0; padding: 18px;">Belum ada booking yang disetujui.</td></tr>
-                        <?php endif; ?>
-                    </tbody>
+                    <tr><th>ID</th><th>Pemesan & WA</th><th>Ruangan</th><th>Tanggal & Jam Main</th><th>Aksi</th></tr>
+                    <?php if (count($approvedBookings) > 0): ?>
+                        <?php foreach ($approvedBookings as $ab): ?>
+                        <tr>
+                            <td>#<?= $ab['id'] ?></td>
+                            <td><?= htmlspecialchars($ab['nama_depan'] . ' ' . $ab['nama_belakang']) ?><br><small><?= htmlspecialchars($ab['no_wa']) ?></small></td>
+                            <td><?= htmlspecialchars($ab['nama_ruang']) ?></td>
+                            <td><?= htmlspecialchars($ab['pesan_untuk_tanggal']) ?> | <?= htmlspecialchars($ab['jam_mulai']) ?> (<?= $ab['durasi'] ?>)</td>
+                            <td>
+                                <form method="POST" style="display:inline;" onsubmit="return confirm('Tandai pelanggan ini sudah datang ke lokasi?');">
+                                    <input type="hidden" name="action" value="mark_arrived">
+                                    <input type="hidden" name="booking_id" value="<?= $ab['id'] ?>">
+                                    <button type="submit" class="btn-primary" style="background-color: #17a2b8;">Telah Datang</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr><td colspan="5" style="text-align: center;">Belum ada booking yang disetujui.</td></tr>
+                    <?php endif; ?>
                 </table>
             </div>
         </div>
 
+        <!-- SECTION 1.6: LOG BOOK (TERKONFIRMASI DATANG) -->
+        <div class="card" style="flex-basis: 100%; border-top: 4px solid #6c757d;">
+            <h3 style="color: #6c757d;">Log Book (Histori Penggunaan Ruangan)</h3>
+            <div class="table-responsive">
+                <table>
+                    <tr><th>ID</th><th>Pemesan & WA</th><th>Ruangan</th><th>Waktu Bermain</th><th>Status</th></tr>
+                    <?php if (count($logBookings) > 0): ?>
+                        <?php foreach ($logBookings as $log): ?>
+                        <tr style="background-color: #f8f9fa;">
+                            <td>#<?= $log['id'] ?></td>
+                            <td><?= htmlspecialchars($log['nama_depan'] . ' ' . $log['nama_belakang']) ?></td>
+                            <td><?= htmlspecialchars($log['nama_ruang'] ?? 'Ruangan Telah Dihapus') ?></td>
+                            <td><?= htmlspecialchars($log['pesan_untuk_tanggal']) ?> (<?= $log['durasi'] ?>)</td>
+                            <td><span style="background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">Selesai</span></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr><td colspan="5" style="text-align: center;">Belum ada histori log book.</td></tr>
+                    <?php endif; ?>
+                </table>
+            </div>
+        </div>
         <!-- SECTION KATEGORI & RUANGAN -->
         <div class="row-grid">
             

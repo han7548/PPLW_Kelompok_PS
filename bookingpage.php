@@ -189,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['tanggal']) && isset($_G
     <div class="header-nav">
         <a href="dashboard.php" class="nav-back">
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 5px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-            Kembali ke Dashboard
+            Kembali ke Home
         </a>
     </div>
 
