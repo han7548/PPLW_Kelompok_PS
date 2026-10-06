@@ -3,7 +3,14 @@ untuk uts dan uas
 
 # FYI untuk ini aku pake try-tunneling by cloudeflare, kalau mau visit web by link chat aja ke Hana ( semoga lagi pegang laptop)
 
-https://tub-limousines-auckland-fires.trycloudflare.com/dashboard.php#katalog-ruangan
+https://pan-distinguished-whom-hospital.trycloudflare.com
+
+admin control panel : 
+
+https://pan-distinguished-whom-hospital.trycloudflare.com/AdminControlPanel.php
+
+admin
+admin123
 
 
 Mungkin nanti untuk hosting aku pindah biar bisa diakses tanpa harus nyalain locale dari aku, entar linknya aku taruh sini
